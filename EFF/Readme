@@ -1,5 +1,7 @@
 Information on the EFF programming language can be found here: https://www.eff-lang.org/
 
-Once EFF is install in a computer, compiling a file "main.ml" in EFF can be done with the following command : 
+Once EFF is installed on a computer, compiling a file "main.ml" in EFF can be done with the following command : 
 
 eff main.ml 
+
+In the main programs, several codes are written depending on the learning algorithm you chose. 
