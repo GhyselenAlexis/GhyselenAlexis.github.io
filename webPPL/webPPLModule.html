@@ -1,0 +1,20 @@
+<html>
+<head>
+<meta charset="UTF-8"> <!-- tell the browser that editor.js contains unicode -->
+<script src="webppl.js"></script> <!-- compiled webppl library; get this from https://github.com/probmods/webppl -->
+<script src="webppl-editor.js"></script>
+<script src="webppl-viz.js"></script>
+<link rel="stylesheet" href="webppl-editor.css">
+<link rel="stylesheet" href="webppl-viz.css">
+</head>
+<body>
+<pre>
+flip(0.5)
+</pre> 
+</body>
+<script>
+// find all <pre> elements and set up the editor on them
+var preEls = Array.prototype.slice.call(document.querySelectorAll("pre"));
+preEls.map(function(el) { editor.setup(el, {language: 'webppl'}); });
+</script>
+</html>
