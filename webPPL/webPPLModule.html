@@ -8,137 +8,47 @@
 <script src="jquery.js"></script>
 <script src="paper.js"></script>
 <script src="underscore.js"></script>
+<script src="box2d.js"></script>
+<script src="physics.js"></script>
 <link rel="stylesheet" href="webppl-editor.css">
 <link rel="stylesheet" href="webppl-viz.css">
 </head>
 <body>
 <pre>
-var canvas = Draw(400, 400, true)
-///fold:
-var drawLines = function(canvas, start, positions){
-  if (positions.length == 0) { return []; }
-  var next = positions[0];
-  canvas.line(start[0], start[1], next[0], next[1], 4, 0.2);
-  drawLines(canvas, next, positions.slice(1));
+
+var dim = function() { return uniform(5, 20) }
+var staticDim = function() { return uniform(10, 50) }
+var shape = function() { return flip() ? 'circle' : 'rect' }
+var xpos = function() { return uniform(100, worldWidth - 100) }
+var ypos = function() { return uniform(100, worldHeight - 100) }
+
+var ground = {shape: 'rect',
+              static: true,
+              dims: [worldWidth, 10],
+              x: worldWidth/2,
+              y: worldHeight}
+
+var falling = function() {
+  return {
+    shape: shape(),
+    static: false,
+    dims: [dim(), dim()],
+    x: xpos(),
+    y: 0}
+};
+
+var fixed = function() {
+  return {
+    shape: shape(),
+    static: true,
+    dims: [staticDim(), staticDim()],
+    x: xpos(),
+    y: ypos()}
 }
 
-var drawPoints = function(canvas, positions){
-  if (positions.length == 0) { return []; }
-  var next = positions[0];
-  canvas.circle(next[0], next[1], 2, "red", "white");
-  drawPoints(canvas, positions.slice(1));
-}
+var fallingWorld = [ground, falling(), falling(), falling(), fixed(), fixed()]
+physics.animate(1000, fallingWorld);
 
-var observeState = function(pos){
-  return map(
-    function(x){ return gaussian(x, 5); },
-	pos
-  );
-};
-
-var init = function(dim){
-  var state1 = repeat(dim, function(){ return gaussian(200, 1) });
-  var state2 = repeat(dim, function(){ return gaussian(200, 1) });
-  var states = [state1, state2];
-  var observations = map(observeState, states);
-  return {
-    states: states,
-    observations: observations
-  }
-}
-
-var semiMarkovWalk = function(n, dim) {
-  var prevData = (n == 2) ? init(dim) : semiMarkovWalk(n-1, dim);
-  var prevStates = prevData.states;
-  var prevObservations = prevData.observations;
-  var newState = transition(last(prevStates), secondLast(prevStates));
-  var newObservation = observeState(newState);
-  return {
-    states: prevStates.concat([newState]),
-    observations: prevObservations.concat([newObservation])
-  }
-};
-///
-
-var transition = function(lastPos, secondLastPos){
-  return map2(
-    function(lastX, secondLastX){
-      var momentum = (lastX - secondLastX) * .7;
-      return gaussian(lastX + momentum, 3);
-    },
-	lastPos,
-    secondLastPos
-  );
-};
-
-
-var observeConstrained = function(pos, trueObs){
-  return map2(
-    function(x, obs){ return factor(Gaussian({mu: x, sigma: 5}).score(obs)); },    
-	pos,
-    trueObs
-  );
-};
-
-var initConstrained = function(dim, trueObs){
-  var state1 = repeat(dim, function(){ return gaussian(200, 1) });
-  var obs1 = observeConstrained(state1, trueObs[0]);
-  var state2 = repeat(dim, function(){ return gaussian(200, 1) });
-  var obs2 = observeConstrained(state2, trueObs[1]);
-  return {
-    states: [state1, state2],
-    observations: [obs1, obs2]
-  }
-}
-
-var semiMarkovWalkConstrained = function(n, dim, trueObs) {
-  var prevData = (
-    (n == 2) ?
-    initConstrained(dim, trueObs.slice(0, 2)) :
-    semiMarkovWalkConstrained(n-1, dim, trueObs.slice(0, trueObs.length-1)));
-  var prevStates = prevData.states;
-  var prevObservations = prevData.observations;
-  var newState = transition(last(prevStates), secondLast(prevStates));
-  var newObservation = observeConstrained(newState, trueObs[trueObs.length-1]);
-  return {
-    states: prevStates.concat([newState]),
-    observations: prevObservations.concat([newObservation])
-  }
-};
-
-
-// Run model using particle filter
-
-var numSteps = 80;
-var sMW = semiMarkovWalk(numSteps, 2);
-var trueObservations = sMW.observations;
-var trueStates = sMW.states;
-
-
-var posteriorSampler = ParticleFilter(
-  function(){
-    return semiMarkovWalkConstrained(numSteps, 2, trueObservations);
-  },
-  50) // Try reducing the number of samples to 1!
-
-var posteriorInfer = Infer({model : function(){
-    return semiMarkovWalkConstrained(numSteps, 2, trueObservations);
-  }})
-
-var inferredStates = sample(posteriorInfer).states;
-var inferredStates2 = sample(posteriorSampler).states
-
-// Draw model output
-
-var canvas = Draw(400, 400, true)
-drawPoints(canvas, trueObservations)
-drawLines(canvas, inferredStates[0], inferredStates.slice(1))
-var canvas2 = Draw(400, 400, true)
-drawPoints(canvas2, trueObservations)
-drawLines(canvas2, inferredStates2[0], inferredStates2.slice(1))
-var canvas3 = Draw(400, 400, true)
-drawPoints(canvas3, trueObservations)
-drawLines(canvas3, trueStates[0], trueStates.slice(1))
 </pre> 
 </body>
 <script>
