@@ -1,6 +1,6 @@
 <html>
 <head>
-<meta charset="UTF-8"> <!-- tell the browser that editor.js contains unicode -->
+<meta charset="UTF-8"> 
 <script src="webppl.js"></script> <!-- compiled webppl library; get this from https://github.com/probmods/webppl -->
 <script src="webppl-editor.js"></script>
 <script src="webppl-viz.js"></script>
@@ -12,44 +12,57 @@
 <script src="physics.js"></script>
 <link rel="stylesheet" href="webppl-editor.css">
 <link rel="stylesheet" href="webppl-viz.css">
+<link rel="stylesheet" href="styles.css"> 
+
 </head>
 <body>
-<pre>
 
-var dim = function() { return uniform(5, 20) }
-var staticDim = function() { return uniform(10, 50) }
-var shape = function() { return flip() ? 'circle' : 'rect' }
-var xpos = function() { return uniform(100, worldWidth - 100) }
-var ypos = function() { return uniform(100, worldHeight - 100) }
+  <ul>
+    <li><a class="active" href="webPPLModule.html">Intro</a></li>
+    <li><a href="webPPLChapter1.html">Chapter 1: The Core Language</a></li>
+    <li><a href="webPPLChapter2.html">Chapter 2: Forward Models </a></li>
+    <li><a href="webPPLChapter3.html">Chapter 3: Conditioning and Inference</a></li>
+  </ul>
+  
+<h1> Introduction: References of the Course </h1>
 
-var ground = {shape: 'rect',
-              static: true,
-              dims: [worldWidth, 10],
-              x: worldWidth/2,
-              y: worldHeight}
+This webpage is used in the course of LANGUAGES AND ALGORITHMS FOR ARTIFICIAL INTELLIGENCE, Modulo 4, given in the University of Bologna in 2023. 
+Several examples given during the course are written and can be run using the webPPL langage. 
 
-var falling = function() {
-  return {
-    shape: shape(),
-    static: false,
-    dims: [dim(), dim()],
-    x: xpos(),
-    y: 0}
-};
+<div class = card>
+<h3> References for webPPL</h3>
+<p> This course and this webpage on Probabilistic Programming, based on WebPPL, is inspired by the book 
+  N. D. Goodman, J. B. Tenenbaum, and The ProbMods Contributors (2016). Probabilistic Models of Cognition (2nd ed.). From <a href=https://probmods.org/> this site </a>
+</p>
+<p>
+  You can refer to <a href="https://webppl.readthedocs.io/en/master/index.html" > the documentation</a>, and the <a href="http://webppl.org/"> main page</a>.
+</p>
 
-var fixed = function() {
-  return {
-    shape: shape(),
-    static: true,
-    dims: [staticDim(), staticDim()],
-    x: xpos(),
-    y: ypos()}
-}
+<p>
+  Advanced topics using webPPL and examples can be found also in the book from N. D. Goodman and A. Stuhlmüller (electronic). The Design and Implementation of Probabilistic Programming Languages. From <a href = "http://dippl.org/"> this site</a>. 
+</p>
+</div>
 
-var fallingWorld = [ground, falling(), falling(), falling(), fixed(), fixed()]
-physics.animate(1000, fallingWorld);
+<div class = card>
+  <h3> References for Church</h3>
+  <p> Before being a langage based on JS, webPPL was initially a langage based on Scheme, called Church. Some old references for Church are still relevant for webPPL, even 
+    if the core syntax changed. 
+  </p>
+  <p>
+    I recommend the course on Church available on the <a href="https://www.youtube.com/channel/UCEBb1b_L6zDS3xTUrIALZOw">MIT OpenCourseWare Youtube Channel</a>: <a href="https://www.youtube.com/watch?v=lv3kGg-eRa0&"> First Part</a> / <a href="https://www.youtube.com/watch?v=Unvy1L_NH0c"> Second Part</a>
+  </p>
+  <p>
+    And some <a href="http://forestdb.org/">examples </a>written in Church
+  </p>
+  </div>
 
-</pre> 
+<div class = card>
+    <h3> Probabilistic Programming </h3>
+  <p> And finally, as a reference for Probabilistic Programming in general, I recommend <a href="https://arxiv.org/abs/1809.10756#">this book</a>.  </p>
+
+</div>
+
+
 </body>
 <script>
 // find all <pre> elements and set up the editor on them

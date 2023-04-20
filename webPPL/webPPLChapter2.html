@@ -1,0 +1,70 @@
+<html>
+<head>
+<meta charset="UTF-8"> 
+<script src="webppl.js"></script> <!-- compiled webppl library; get this from https://github.com/probmods/webppl -->
+<script src="webppl-editor.js"></script>
+<script src="webppl-viz.js"></script>
+<script src="draw.js"></script>
+<script src="jquery.js"></script>
+<script src="paper.js"></script>
+<script src="underscore.js"></script>
+<script src="box2d.js"></script>
+<script src="physics.js"></script>
+<link rel="stylesheet" href="webppl-editor.css">
+<link rel="stylesheet" href="webppl-viz.css">
+<link rel="stylesheet" href="styles.css"> 
+
+</head>
+<body>
+
+    <ul>
+        <li><a href="webPPLModule.html">Intro</a></li>
+        <li><a href="webPPLChapter1.html">Chapter 1: The Core Language</a></li>
+        <li><a class="active" href="webPPLChapter2.html">Chapter 2: Forward Models </a></li>
+        <li><a href="webPPLChapter3.html">Chapter 3: Conditioning and Inference</a></li>
+    </ul>
+  
+ <p>
+<pre>
+    var dim = function() { return uniform(5, 20) }
+    var staticDim = function() { return uniform(10, 50) }
+    var shape = function() { return flip() ? 'circle' : 'rect' }
+    var xpos = function() { return uniform(100, worldWidth - 100) }
+    var ypos = function() { return uniform(100, worldHeight - 100) }
+    
+    var ground = {shape: 'rect',
+                  static: true,
+                  dims: [worldWidth, 10],
+                  x: worldWidth/2,
+                  y: worldHeight}
+    
+    var falling = function() {
+      return {
+        shape: shape(),
+        static: false,
+        dims: [dim(), dim()],
+        x: xpos(),
+        y: 0}
+    };
+    
+    var fixed = function() {
+      return {
+        shape: shape(),
+        static: true,
+        dims: [staticDim(), staticDim()],
+        x: xpos(),
+        y: ypos()}
+    }
+    
+    var fallingWorld = [ground, falling(), falling(), falling(), fixed(), fixed()]
+    physics.animate(1000, fallingWorld);
+</pre> 
+
+</p>
+</body>
+<script>
+// find all <pre> elements and set up the editor on them
+var preEls = Array.prototype.slice.call(document.querySelectorAll("pre"));
+preEls.map(function(el) { editor.setup(el, {language: 'webppl'}); });
+</script>
+</html>
