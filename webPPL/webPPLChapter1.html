@@ -23,6 +23,114 @@
         <li><a href="webPPLChapter2.html">Chapter 2: Forward Models </a></li>
         <li><a href="webPPLChapter3.html">Chapter 3: Conditioning and Inference</a></li>
     </ul>
+
+<h1> Examples </h1>
+
+<p> 
+
+Taken from <a href="https://probmods.org/chapters/bayesian-data-analysis.html">Probmods Chapter 7</a>
+    <pre>
+
+    // observed data
+var k = 1 // number of people who support candidate A
+var n = 20  // number of people asked
+
+var model = function() {
+
+   // true population proportion who support candidate A
+   var p = uniform(0, 1);
+
+   // Observed k people support "A"
+   // Assuming each person's response is independent of each other
+   observe(Binomial({p : p, n: n}), k);
+
+   // predict what the next n will say
+   var posteriorPredictive = binomial(p, n);
+
+   // recreate model structure, without observe
+   var prior_p = uniform(0, 1);
+   var priorPredictive = binomial(prior_p, n);
+
+   return {
+       prior: prior_p, priorPredictive : priorPredictive,
+       posterior : p, posteriorPredictive : posteriorPredictive
+    };
+}
+
+var posterior = Infer(model);
+
+viz.marginals(posterior)
+
+</pre></p>
+
+<p><pre>
+
+    //Observed data
+    var observedData = [{"x":0,"y":0},{"x":1,"y":5.2},{"x":2,"y":9.4},{"x":3,"y":15},{"x":4,"y":20.5},{"x":5,"y":24.3}]
+    
+    
+    var myDraw = Draw(500, 500, true)
+    
+    //Intermediate function to draw
+    var scale = function(p) {
+      var newX = 20 + p.x * 75
+      var newY = 480 - p.y * 10
+      return{"x":newX,"y":newY}
+    }
+    
+    var drawData = function(img,obs) {
+    var scaleData = map(scale,obs)
+    map(function(p) {
+      img.circle(p.x, p.y, 3, 'black', 'white')
+    }, scaleData)
+    }
+    
+    var drawLinFun = function(img,f) { 
+      var a = scale({"x":0, "y":f(0)})
+      var b = scale({"x":5.5, "y":f(5.5)})
+      img.line(a.x,a.y,b.x,b.y,1,0.01,"red")
+    }
+    
+    
+    // Make a function from a coefficient
+    var makeFun = function(a) {
+      return ( function(x) {
+        return(a * x)
+      })
+    }
+    
+    //Sample a point from a function 
+    
+    
+    //Compute a Random Line, and observe data
+    var randomLine = function() {
+      var a = uniform(0,10)
+      var f = makeFun(a)
+      
+      var obsFn = function(datum){
+          observe(Gaussian({mu: f(datum.x), sigma: 2}), datum.y)
+      }
+      mapData({data: observedData}, obsFn)
+      
+      return a
+      
+    }
+    
+    var post = Infer(randomLine)
+    
+    var randomDraw = function() {
+      var a = sample(post)
+      drawLinFun(myDraw,makeFun(a))
+    }
+    
+    viz(post)
+    
+    drawData(myDraw,observedData)
+    repeat(1000,randomDraw)
+    
+    print("The value should be around 5")
+
+</pre></p>
   
 <h1> The Core Language : A functional Javascript</h1>
 
