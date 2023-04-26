@@ -28,7 +28,7 @@
 
 <p> 
 
-Taken from <a href="https://probmods.org/chapters/bayesian-data-analysis.html">Probmods Chapter 7</a>
+Poll example, taken from <a href="https://probmods.org/chapters/bayesian-data-analysis.html">Probmods Chapter 7</a>
     <pre>
 
     // observed data
@@ -63,7 +63,9 @@ viz.marginals(posterior)
 
 </pre></p>
 
-<p><pre>
+<p>
+A very simple case of linear regression.     
+<pre>
 
 //Observed data
 var observedData = [{"x":0,"y":0},{"x":1,"y":5.2},{"x":2,"y":9.4},{"x":3,"y":15},{"x":4,"y":20.5},{"x":5,"y":24.3}]
@@ -132,24 +134,28 @@ print("The value should be around 5")
 <h3> Basic Arithmetics</h3>
 <p>
 <pre>
-    (((1 + 2) - 1) * 3) / 4
+//Usual operators. With only float division
+(((1 + 2) - 1) * 3) / 4
 </pre> 
 </p>
 
 <p>
 <pre>
+// Modulo 
 5 % 2 
 </pre> 
 </p>
 
 <p>
 <pre>
-    'Hello ' + "World"
+// You can concatenate strings with +, and you can use both "" and ''
+'Hello ' + "World"
 </pre> 
 </p>
 
 <p>
 <pre>
+//Automatic Cast
     "Today is the " + 9
 </pre> 
 </p>
@@ -163,15 +169,208 @@ print("The value should be around 5")
 
 <h3> Equality and Booleans </h3>
 
-<p><pre>2 == "2"</pre></p>
-<p><pre>2 === "2"</pre></p>
-<p><pre>!(true && (true || false))</pre></p>
+<p><pre>
+// Abstract Equality, attempts to type cast    
+2 == "2"
+</pre></p>
+<p><pre>
+// Strict Equality    
+    2 === "2"
+</pre></p>
+<p><pre>
+// Some Boolean Operators    
+!(true && (true || false))</pre></p>
 
 <h3> Conditionals </h3>
 
 <p><pre>if (5 > 1) {1} else {2}</pre></p>
-<p><pre>(5 > 1) ? 1 : 2</pre></p>
+<p><pre>
+// You can use the ternary operator to gain space and time  
+    (5 > 1) ? 1 : 2</pre></p>
 
+<h3> Variable Declaration </h3>
+
+<p> <pre> 
+// Always declare using var, no other way to do a variable declaration in webPPL 
+var a = 5 
+var b = 6, c = 7
+print(b)
+
+</pre></p>
+
+
+<h3> Objects and Functions </h3>
+
+<p><pre>
+// Objects are standard, and you can call them by using point or bracket
+var a = {"name" : "ficus", "length" : 50}
+print(a.name)
+print(a["name"]) 
+print(a.length)
+print(a["length"])
+
+</pre></p>
+
+<p><pre>
+// Arrays 
+var a = [1,2,3,4,9,8]
+print(a[0])
+print(a[4])	
+
+</pre></p>
+
+<p><pre>
+// You can only define function using this syntax
+var f = function(a,b,x) {
+	return (a*x + b)
+}
+f(3,5,4)
+
+</pre></p>
+
+<h3> WebPPL is not an imperative language !</h3>
+
+<p>
+Everything is immutable, try the examples below: 
+<pre>
+var a = 5 
+a = 6 
+</pre>
+
+<pre>
+var a = [1,2,3,4]
+a[0] = 0
+</pre>
+
+<pre>
+var a = {"name" : "ficus", "length" : 50}
+a.length = 40 
+</pre>
+
+<pre>
+// But you can still do this:
+var a = [1,2,3,4]
+a.pop() 
+a.push(1)
+print(a)
+</pre>
+
+</p>
+
+<h3> Some Other Available Methods </h3>
+
+<p><pre>
+var str = "Hello"
+print("We test some methods:")
+
+// You can access elements
+print("Second element: " + str[1])
+
+//Get the length
+print("Length: " + str.length)
+
+// Slice from beginning (included) to end (excluded). Also useful to create a copy of an array for example
+print("Slicing: " + str.slice(1,3))
+
+//Replace one occurence, you can also use regular expressions and replaceAll
+print("Replace One Occurence: " + str.replace("l","r"))
+
+// Some other useful functions includes operations on the alhabet
+print("Upper Case: " + str.toUpperCase())
+
+// You can use the standard string concatenation as a method instead of using + 
+print("Concat: " + str.concat(" World"))
+</pre></p>
+
+<h3> Functional Programming</h3>
+
+<p>
+Simple Recursion 
+<pre>
+var factorial = function(n) {
+  if (n==1) {
+    return 1
+  }
+  else {
+    return n * factorial(n-1)
+  }
+}
+
+factorial(5)
+</pre></p>
+
+<p>
+Iterative Recursion
+<pre>
+var factorial = function(n) {
+  var factorial_iter = function(i,r) {
+    if (i > n) {
+      return r  	
+    }
+    else {
+      factorial_iter(i+1,i * r)	
+    }  	
+  }
+  factorial_iter(1,1)	
+}
+
+factorial(5)    
+</pre></p>
+
+<p>
+Other tail recursive example
+<pre>
+var factorial = function(n) {
+  var factorialTR= function(n,r) {
+    (n == 0) ? r : factorialTR(n-1,n * r) 
+  }
+  factorialTR(n,1)
+}
+
+factorial(5)
+</pre></p>
+
+<h3> Higher-Order Functions</h3>
+
+<p> <pre>
+var myMap = function(l,f) {
+  if (l.length == 0) {
+    return []
+  }
+  else {
+    var hd = l.pop()
+    var tl = myMap(l,f)
+    tl.push(f(hd))
+    return tl
+  }
+}
+
+myMap(_.range(1,11),function(x) {x * x})
+</pre>
+
+<pre>
+
+print("Some Examples of Uses of Higher-Order Operators")
+
+// Compute the square from 0 to 10
+print(map(function(x) {x * x},_.range(0,11)))
+
+// Compute the logs from 0 to 10 using mapN
+print(mapN(function(x) {Math.log(x)},11))
+
+//Compute the sums of the two list
+print(map2(function(x,y) {x + y},[10,15,5,3,6],[4,7,9,0,13]))
+
+//Compute the factorial by taking the product of the list of numbers from 1 to 5
+print(reduce(function(x,r) {x * r},1,_.range(1,6)))
+
+//Filter a list to keep only the even numbers
+print(filter(function(x) {return (x % 2 == 0)},_.range(0,11)))
+
+
+</pre>
+
+</p>
 
 <script>
 // find all <pre> elements and set up the editor on them
