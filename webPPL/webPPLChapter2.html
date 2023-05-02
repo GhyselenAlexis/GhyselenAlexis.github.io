@@ -13,18 +13,20 @@
 <link rel="stylesheet" href="webppl-editor.css">
 <link rel="stylesheet" href="webppl-viz.css">
 <link rel="stylesheet" href="styles.css"> 
+<link rel="stylesheet" href="w3.css"> 
 
 </head>
 <body>
 
-    <ul>
-        <li><a href="webPPLModule.html">Intro</a></li>
-        <li><a href="webPPLChapter1.html">Chapter 1: The Core Language</a></li>
-        <li><a class="active" href="webPPLChapter2.html">Chapter 2: Forward Models </a></li>
-        <li><a href="webPPLChapter3.html">Chapter 3: Conditioning and Inference</a></li>
-    </ul>
+    <div class="w3-bar w3-black">
+        <a href="webPPLModule.html" class="w3-bar-item w3-button w3-mobile">Intro</a>
+        <a href="webPPLChapter1.html" class="w3-bar-item w3-button w3-mobile">Chapter 1: The Core Language</a>
+        <a href="webPPLChapter2.html" class="w3-bar-item w3-button w3-mobile w3-green">Chapter 2: Forward Models</a>
+        <a href="webPPLChapter3.html" class="w3-bar-item w3-button w3-mobile">Chapter 3: Conditioning and Inference</a>
+    </div> 
   
  <p>
+    Example of a generative model using a physic library, example taken from <a href="https://probmods.org/chapters/generative-models.html">this chapter</a>.
 <pre>
     var dim = function() { return uniform(5, 20) }
     var staticDim = function() { return uniform(10, 50) }
@@ -61,6 +63,347 @@
 </pre> 
 
 </p>
+
+<h3> Flipping Coins </h3>
+
+<p><pre>
+// Flip a fair coin 
+flip()
+</pre>
+<pre>
+//Do not confuse with the function 
+flip
+</pre>
+
+</p>
+
+<p> 
+A bit more complex. 
+<pre>
+// Number of head with 3 Coins
+flip() + flip() + flip() 
+</pre>
+
+<pre>
+// You cannot repeat like this:
+repeat(1000,flip() + flip() + flip())
+</pre>
+
+<pre>
+// Or like this:
+repeat(1000, flip + flip + flip)    
+</pre>
+
+<pre>
+// You should define a thunk function:
+var sumFlips = function() {
+    flip() + flip() + flip()
+}
+repeat(1000,sumFlips)
+</pre>
+
+<pre>
+// You can also use a lambda
+repeat(1000, function() {flip() + flip() + flip()})
+</pre>
+
+</p>
+
+<p> More Coins
+<pre>
+// Compute n flips. (In practice, you should use the binomial distribution)
+var moreFlips = function(n) {
+    (n == 0) ? 0 : flip() + moreFlips(n-1)
+}
+print(moreFlips(10))
+// Again, if you want to repeat, you need to define a thunk function 
+viz(repeat(1000,function() {moreFlips(10)}))    
+</pre>
+
+Or, you could also define:
+
+<pre>
+// Create a function that returns a thunk function.  
+var moreFlips = function(n) {
+    return function() {
+        (n == 0) ? 0 : flip() + moreFlips(n-1)()
+    }
+}
+viz(repeat(1000,moreFlips(10)))
+</pre>
+</p>
+
+<p>
+<pre>
+// Geometric Distribution 
+var geometric = function() {
+    (flip()) ? 0 : (1 + geometric())
+}
+
+viz(repeat(10000,geometric))
+
+</pre>
+</p>
+
+<h3> Trick Coins </h3>
+
+<p>
+<pre>
+// flip can be given an argument
+var trickCoin = function() { return flip(0.95)}
+viz(repeat(20, trickCoin))
+</pre>
+
+<pre>
+// Make a trick coin (thunk)
+var makeCoin = function(p) {
+    return function() {
+        flip(p)
+    }
+}
+viz(repeat(1000,makeCoin(0.95)))
+</pre>
+</p>
+
+<p>
+<pre>
+// Bending a coin: take a thunk function and return a thunk function
+var bendCoin = function(coin) {
+    return function() {
+        (coin()) ? flip(0.7) : flip(0.1) 
+    }
+}
+
+var fairCoin = flip 
+var trickCoin = function() {flip(0.95)}
+
+viz.table(repeat(10000,bendCoin(fairCoin)))
+viz.table(repeat(10000,bendCoin(trickCoin)))
+</pre>
+</p>
+
+<h3> Example of Causal Model with Medical Symptoms</h3>
+
+<p> 
+<pre>
+var lungCancer = flip(0.01)
+var TB = flip(0.005)
+var stomachFlu = flip(0.1)
+var cold = flip(0.2)
+var other = flip(0.1)
+
+var cough = 
+    (cold && flip(0.5)) ||
+    (lungCancer && flip(0.3)) ||
+    (TB && flip(0.7)) ||
+    (other && flip(0.01))
+
+var fever = 
+    (cold && flip(0.3)) ||
+    (stomachFlu && flip(0.5)) ||
+    (TB && flip(0.1)) ||
+    (other && flip(0.01))
+
+var chestPain = 
+    (lungCancer && flip(0.5)) ||
+    (TB && flip(0.5)) ||
+    (other && flip(0.01))
+
+var shortnessOfBreath = 
+    (lungCancer && flip(0.5)) ||
+    (TB && flip(0.2)) ||
+    (other && flip(0.01))
+
+var symptoms = {
+  cough: cough,
+  fever: fever,
+  chestPain: chestPain,
+  shortnessOfBreath: shortnessOfBreath
+}
+
+symptoms
+</pre>
+</p>
+
+<h3> Distributions and Random Functions</h3>
+
+<p> <pre>
+//make a distribution using the Bernoulli constructor:
+var b = Bernoulli({p: 0.5})
+
+//sample from it with the sample operator:
+print( sample(b) )
+
+//compute the log-probability of sampling true:
+print( b.score(true) )
+
+//visualize the distribution:
+viz(b)
+</pre></p>
+
+<p>
+Some examples of useful distributions for forward models.
+<pre>
+// Binomial Distribution 
+viz(Binomial({n : 50, p : 0.5}))
+viz.table(Binomial({n : 50, p : 0.5}))
+viz(Binomial({n : 50, p : 0.1}))
+binomial(0.5,50)
+</pre>
+
+<pre>
+// The categorical distribution takes an array and its associated (unnormalized) probabilities. 
+viz(Categorical({ ps:[6,7,3,4] , vs: ["blue","orange","green","yellow"] }))
+// Omitting ps gives the uniform distribution over vs
+viz(Categorical({ vs: ["blue","orange","green","yellow"] }))
+print(categorical([6,7,3,4] ,["blue","orange","green","yellow"]))
+var vs = ["blue","orange","green","yellow"]
+print(categorical({vs}))
+</pre>
+
+<pre>
+// The discrete distribution over integers according to a probability array 
+viz(Discrete({ps : [1,2,3,4,5,6]}))
+</pre>
+
+<pre>
+// The extremely useful normal distribution (called Gaussian in webPPL) as it is often taken as a models of 
+// the real world when we expect a noise around an observation. 
+// mu is the mean, which is intuitively the value on which you distribution is centered 
+// sigma is the stnadard deviation, intuitively it represent how far you can go from the mean 
+viz(Gaussian({mu : 0, sigma : 1}))
+viz(Gaussian({mu : 10, sigma : 1}))
+viz(Gaussian({mu : 0, sigma : 10}))
+</pre>
+
+<pre>
+// Uniform Distribution on integers between 0 and n-1 
+viz(RandomInteger({n : 11}))
+</pre>
+
+<pre>
+// Continuous Uniform Distribution on reals between a and b 
+viz(Uniform({a : 10, b : 20}))
+</pre>
+</p>
+
+<h3> Inference </h3>
+
+<p><pre>
+var SumFlips = function() {
+  flip() + flip() + flip()
+}
+// Infer can transform a thunk function into a distribution
+var d = Infer(SumFlips)
+viz(d)
+print(d.score(1))
+print(sample(d))
+</pre></p>
+
+<h3> Logarithmic Score </h3>
+
+<p><pre>
+// Probability are stored with scores, logarithm of probability. 
+print(Bernoulli({p : 0.5}).score(true)) 
+print(Math.log(0.5))
+</pre>
+
+<pre>
+// Take the usual power for small values (1000 samples of a small probability 0.05)
+var badpow = function(x,n) {
+  (n == 0) ? 1 : x * badpow(x,n-1)
+}
+// We cannot distinguish very small values from 0 
+print(badpow(0.05,1000) == 0)
+// But with logarithm, it is easy 
+var logpow = function(x,n) {
+  n * Math.log(x)
+}
+print(logpow(0.05,1000)) 
+// Of course, going back to the value gives back 0, as the value is too small for the float representation 
+print(Math.exp(logpow(0.05,1000)))
+</pre>
+</p>
+
+<h3> Persistent Randomness </h3>
+
+<p>
+<pre>
+var memFlip = mem(flip)
+repeat(1000,memFlip)
+</pre>
+
+<pre>
+var eyeColor = function (person) {
+	return uniformDraw(['blue', 'green', 'brown'])
+};
+
+[eyeColor('bob'), eyeColor('alice'), eyeColor('bob')]
+</pre>
+
+<pre>
+var flipAlot = mem(function (n) {
+  return flip()
+});
+
+[[flipAlot(1), flipAlot(12), flipAlot(47), flipAlot(1548)],
+ [flipAlot(1), flipAlot(12), flipAlot(47), flipAlot(1548)]]
+</pre>
+
+</p>
+
+<h3> Example : The Risk Game </h3>
+
+<p><pre>
+// Modelization of a battle in the Risk Game 
+var dice = function() {
+  return (sample(RandomInteger({n:6})) + 1)
+}
+
+// Compute the number of remaining attackers and defenders for a given dice throw
+var compare = function (nba,la,nbd,ld,n) {
+  if (n == 0) {
+    return {nba,nbd}
+  }
+  else {
+    return (la.pop() > ld.pop()) ? compare(nba,la,nbd + 1,ld,n-1) : compare(nba + 1, la, nbd, ld ,n-1)
+  }
+}
+
+// Define a single round of the risk game, with x attackers and y defenders
+var round = function(x,y) {
+  var att = sort(repeat(x,dice))
+  var def = sort(repeat(y,dice))
+  var take = Math.min(x,y)
+  var c = compare(0,att,0,def,take)
+  return c
+}
+
+// A full battle, which is a sucession of rounds. 
+var war = function(x,y) {
+  if (x == 0 || y == 0) {return {x,y}}
+  else {
+    var nbatt = Math.min(3,x)
+    var nbdef = Math.min(2,y) 
+    var c = round(nbatt,nbdef)
+    return war(x - c.nba,y - c.nbd)
+  }
+}
+
+var nbatt = 40 
+var nbdef = 40
+
+// Get the number of remaining defenders 
+var distfun = function() {
+  var res = war(nbatt,nbdef)
+  return res.y
+}
+
+var dist = Infer(distfun)
+
+viz(dist)
+</pre></p>
+
 </body>
 <script>
 // find all <pre> elements and set up the editor on them
