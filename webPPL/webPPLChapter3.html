@@ -25,12 +25,318 @@
         <a href="webPPLChapter3.html" class="w3-bar-item w3-button w3-mobile w3-green">Chapter 3: Conditioning and Inference</a>
     </div> 
   
+<h3> Conditioning </h3>
  <p>
 <pre>
-Chapter 3
+// Decomment the conditions to observe the belief on the distribution of A 
+var model = function() {
+  var A = flip()
+  var B = flip()
+  var C = flip()
+  // condition(A + B + C == 3)
+  // condition(A + B + C >= 2) 
+  // condition(B == 0)
+  return {'A': A}
+}
+var dist = Infer(model)
+viz(dist)
+</pre> 
+
+<pre>
+// Conditioning without inferring does not make sense
+// Try to uncomment the condition below
+var model = function() {
+  var A = flip()
+  var B = flip()
+  var C = flip()
+  // condition(A + B + C >= 2) 
+  return {'A': A}
+}
+
+model() 
 </pre> 
 
 </p>
+
+<h3> Enumerate </h3>
+
+<p> 
+<pre> 
+var model = function() {
+  var A = flip()
+  var B = flip()
+  var C = flip()
+  condition(A + B + C >= 2) 
+  return {'A': A, 'B': B, 'C' : C}
+}
+// We only need 8 executions to see all the paths for this example. 
+var truedist = Infer(model)
+var dist = Infer({method: "enumerate", maxExecutions: 8, strategy : "likelyFirst"},model)
+viz.table(truedist)
+viz.table(dist)
+</pre>
+<pre>
+///fold:
+var model = function() {
+  var A = flip()
+  var B = flip()
+  var C = flip()
+  condition(A + B + C >= 2) 
+  return {'A': A, 'B': B, 'C' : C}
+}
+/// 
+// If we remove one execution, we see that the inference fails to give the precise probabilities.  
+var truedist = Infer(model)
+var dist = Infer({method: "enumerate", maxExecutions: 7, strategy : "likelyFirst"},model)
+viz.table(truedist)
+viz.table(dist)
+</pre>
+<pre>
+// Let us modify the program a bit to change the likelyFirst strategy
+// We use biaised coins more likely to return true. 
+var model = function() {
+  var A = flip(0.6)
+  var B = flip(0.6)
+  var C = flip(0.6)
+  condition(A + B + C >= 2) 
+  return {'A': A, 'B': B, 'C' : C}
+}
+var truedist = Infer(model)
+var dist = Infer({method: "enumerate", maxExecutions: 7, strategy : "likelyFirst"},model)
+viz.table(truedist)
+viz.table(dist)
+// This time, enumration can estimate well the probabilities. Why ? 
+// Remove the condition to have an hint. 
+</pre>
+
+<pre>
+// Then, this should not work... 
+var model = function() {
+  var A = flip(0.4)
+  var B = flip(0.4)
+  var C = flip(0.4)
+  condition(A + B + C >= 2) 
+  return {'A': A, 'B': B, 'C' : C}
+}
+var truedist = Infer(model)
+var dist = Infer({method: "enumerate", maxExecutions: 7, strategy : "likelyFirst"},model)
+viz.table(truedist)
+viz.table(dist)
+// As expected. 
+</pre>
+</p>
+
+<p>
+A bit of more advanced reasoning: we saw that the "likelyFirst" strategy uses an heuristic dependent on the probabilities of each path.
+But in practice, we do not want to modify the generative model. Do we have another solution ? 
+<pre>
+// In fact, factor can be used to guide the heuristics. 
+// Here, we remove some weight to the path where A is false
+var model = function() {
+  var A = flip()
+  if (A == false) {factor(-10)};
+  var B = flip()
+  var C = flip()
+  // But we give back the weight after
+  if (A == false) {factor(+10)};
+  condition(A + B + C >= 2)
+  return {'A': A, 'B': B, 'C' : C}
+}
+// This time it works. 
+var truedist = Infer(model)
+var dist = Infer({method: "enumerate", maxExecutions: 6, strategy : "likelyFirst"},model)
+viz.table(truedist)
+viz.table(dist)
+// You can remove the condition to see all the paths 
+// Remove the second factor, what is the problem ? Why ? 
+</pre></p>
+
+<h3> Rejection Sampling </h3>
+
+<p><pre>
+// Direct Implementation of Rejection Sampling 
+var takeSample = function () {
+  var A = flip()
+  var B = flip()
+  var C = flip()
+  var D = A + B + C
+  // If we do not satisfy the condition, we try again
+  return D >= 2 ? A : takeSample()
+}
+viz(repeat(1000, takeSample))
+viz.table(repeat(1000, takeSample))
+</pre>
+<pre>
+// Using the Inference Operator
+var model = function () {
+  var A = flip()
+  var B = flip()
+  var C = flip()
+  var D = A + B + C
+  condition(D >= 2)
+  return A
+}
+var dist = Infer({method: 'rejection', samples: 1000}, model)
+viz(dist)
+viz.table(dist)
+</pre>
+
+</p>
+
+<h3> Example 1 : Inverse Physics</h3>
+
+<p>
+<pre>
+// Makes a floor with evenly spaced buckets
+var bins = function (xmin, xmax, width) {
+  return ((xmax < xmin + width)
+          // floor
+          ? {shape: 'rect', static: true, dims: [400, 10], x: 175, y: 500}
+          // bins
+          : [{shape: 'rect', static: true, dims: [1, 10], x: xmin, y: 490}].concat(bins(xmin + width, xmax, width))
+         )
+}
+
+// Add two fixed circles
+var world = [{shape: 'circle', static: true, dims: [60], x: 60, y: 200},
+             {shape: 'circle', static: true, dims: [30], x: 300, y: 300}].concat(bins(-1000, 1000, 25))
+
+// The random block has an random initial starting state, random on the horizontal line (in x) 
+var randomBlock = function () {
+  return {shape: 'circle', static: false, dims: [10], x: uniform(0, worldWidth), y: 0}
+}
+// The number 1000 indicates the number of "steps" you want to simulate 
+physics.animate(1000, [randomBlock()].concat(world))
+</pre>
+
+<pre>
+///fold: 
+// Makes a floor with evenly spaced buckets
+var bins = function (xmin, xmax, width) {
+  return ((xmax < xmin + width)
+          // floor
+          ? {shape: 'rect', static: true, dims: [400, 10], x: 175, y: 500}
+          // bins
+          : [{shape: 'rect', static: true, dims: [1, 10], x: xmin, y: 490}].concat(bins(xmin + width, xmax, width))
+         )
+}
+
+// Add two fixed circles
+var world = [{shape: 'circle', static: true, dims: [60], x: 60, y: 200},
+             {shape: 'circle', static: true, dims: [30], x: 300, y: 300}].concat(bins(-1000, 1000, 25))
+
+// The random block has an random initial starting state, random on the horizontal line (in x) 
+var randomBlock = function () {
+  return {shape: 'circle', static: false, dims: [10], x: uniform(0, worldWidth), y: 0}
+}
+/// 
+// Get the Ball (filter the only non static object in the world)
+var getBallX = function(world) {
+  var ball = filter(function(obj) { return !obj.static }, world)[0];
+  return ball.x;
+}
+
+// Gives the actual observation of the ball. 
+var observedX = 160;
+
+// Generative Model 
+var model = function() {
+  var initState = world.concat([randomBlock()])
+  var initX = getBallX(initState);
+  var finalState = physics.run(1000, initState);
+  var finalX = getBallX(finalState);
+  observe(Gaussian({mu: finalX, sigma: 10}), observedX)
+  return {initX: initX}
+}
+
+// Infer the initial distribution, using MCMC
+var initialXDist = Infer(
+  {method: 'MCMC',
+   samples: 100,
+   lag: 10,
+   callbacks: [editor.MCMCProgress()]
+  },
+  model);
+
+viz.density(initialXDist, {bounds: [0,350]})
+</pre>
+
+</p>
+
+<h3> Medical Diagnosis </h3>
+
+<p><pre>
+var dist = Infer({method: 'enumerate'},
+  function () {
+    var lungCancer = flip(0.01)
+    var TB = flip(0.005)
+    var cold = flip(0.2)
+    var stomachFlu = flip(0.1)
+    var other = flip(0.1)
+
+    var cough = ((cold && flip(0.5)) ||
+                 (lungCancer && flip(0.3)) ||
+                 (TB && flip(0.7)) ||
+                 (other && flip(0.01)))
+
+    var fever = ((cold && flip(0.3)) ||
+                 (stomachFlu && flip(0.5)) ||
+                 (TB && flip(0.2)) ||
+                 (other && flip(0.01)))
+
+    var chestPain = ((lungCancer && flip(0.4)) ||
+                     (TB && flip(0.5)) ||
+                     (other && flip(0.01)))
+
+    var shortnessOfBreath = ((lungCancer && flip(0.4)) ||
+                             (TB && flip(0.5)) ||
+                             (other && flip(0.01)))
+
+    condition(cough && fever && chestPain && shortnessOfBreath)
+    return {lungCancer: lungCancer, TB: TB}
+})
+viz(dist)
+viz.marginals(dist)
+viz.table(dist)
+</pre></p>
+
+<h3> Bayesian Data Analysis</h3>
+
+<p> 
+Poll example, taken from <a href="https://probmods.org/chapters/bayesian-data-analysis.html">Probmods Chapter 7</a>
+    <pre>
+
+// observed data
+var k = 1 // number of people who support candidate A
+var n = 20  // number of people asked
+
+var model = function() {
+
+    // true population proportion who support candidate A
+    var p = uniform(0, 1);
+
+    // Observed k people support "A"
+    // Assuming each person's response is independent of each other
+    observe(Binomial({p : p, n: n}), k);
+
+    // predict what the next n will say
+    var posteriorPredictive = binomial(p, n);
+
+    // recreate model structure, without observe
+    var prior_p = uniform(0, 1);
+    var priorPredictive = binomial(prior_p, n);
+
+    return {
+        prior: prior_p, priorPredictive : priorPredictive,
+        posterior : p, posteriorPredictive : posteriorPredictive
+    };
+}
+
+var posterior = Infer(model);
+
+viz.marginals(posterior)
+</pre></p>
+
 </body>
 <script>
 // find all <pre> elements and set up the editor on them
