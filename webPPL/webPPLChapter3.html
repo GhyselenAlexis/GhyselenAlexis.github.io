@@ -335,6 +335,271 @@ var model = function() {
 var posterior = Infer(model);
 
 viz.marginals(posterior)
+</pre>
+Linear Regression Example 
+<pre>
+//Observed data
+var observedData = [{"x":0,"y":0},{"x":1,"y":5.2},{"x":2,"y":9.4},{"x":3,"y":15},{"x":4,"y":20.5},{"x":5,"y":24.3}]
+    
+// Create a drawing of size 500,500
+var myDraw = Draw(500, 500, true)
+    
+//Intermediate functions to draw
+
+//Scale a point to the image
+var scale = function(p) {
+      var newX = 20 + p.x * 75
+      var newY = 480 - p.y * 15
+      return{"x":newX,"y":newY}
+}
+    
+// Draw a list of data points
+var drawData = function(img,obs) {
+    var scaleData = map(scale,obs)
+    map(function(p) {
+      img.circle(p.x, p.y, 3, 'black', 'white')
+    }, scaleData)
+}
+    
+// Draw a linear function 
+var drawLinFun = function(img,f) { 
+      var a = scale({"x":0, "y":f(0)})
+      var b = scale({"x":5.5, "y":f(5.5)})
+      img.line(a.x,a.y,b.x,b.y,1,0.01,"red")
+}
+    
+// Make a function from a coefficient
+var makeFun = function(a) {
+    return ( function(x) {
+        return(a * x)
+      })
+}
+    
+//Compute a Random Line, and observe data
+// The prior distribution on a is the uniform one 
+// The generative model take into account some noises, expressed by a gaussian. 
+var randomLine = function() {
+    var a = uniform(0,10)
+    var f = makeFun(a)
+      
+    var obsFn = function(datum){
+        observe(Gaussian({mu: f(datum.x), sigma: 2}), datum.y)
+    }
+    mapData({data: observedData}, obsFn)
+      
+    return a      
+}
+
+// Infer the distribution on coefficients
+var post = Infer(randomLine)
+    
+// Draw samples from the inferred distribution, to have some visual intuition about the distribution
+var randomDraw = function() {
+    var a = sample(post)
+    drawLinFun(myDraw,makeFun(a))
+}
+
+//Visualize the distribution on coefficients
+viz(post)
+    
+// Draw the data 
+drawData(myDraw,observedData)
+// Draw the samples from the marginal distribution 
+repeat(1000,randomDraw)
+    
+print("The value should be around 5")
+</pre>
+
+Fair Coin or Trick Coin ? 
+<pre>
+// Our degree of belief for the fact that the coin is fair 
+var fairPrior = 0.999
+// The observed list of data 
+var obsData = repeat(5,function() {'h'})
+
+//Make a Coin of a Given Weight
+var makeCoin = function(x) {
+    return function() {
+        (flip(x)) ? 'h' : 't'
+    }
+}
+
+//Generative Model 
+var model = function() {
+    //We create the coin acording to our belief 
+    var isFair = flip(fairPrior)
+    var coin = (isFair) ? makeCoin(0.5) : makeCoin(0.95)
+    // A standard way to compare data with a distribution is to use "map"
+    mapData({data: obsData},function(datum) {condition(coin() == datum)})
+    // mapData is similar to map, but you inform the inference that all calls are independent
+    return isFair
+}
+
+var post = Infer(model)
+viz(post)
+</pre>
+<pre>
+// We can be even more precise in our prior distribution.
+// We can try to infer the actual weight of the coin, by believing that trick coin could have any weight > 0.5
+
+
+// Our degree of belief for the fact that the coin is fair 
+var fairPrior = 0.999
+// The observed list of data 
+var obsData = repeat(10,function() {'h'})
+
+//Generative Model 
+var model = function() {
+    //We create the coin acording to our belief 
+    var isFair = flip(fairPrior)
+    // The weight is either 0.5, or a trick coin that prefer head 
+    var weight = (isFair) ? 0.5 : uniform(0.5,1)
+    var dist = Bernoulli({p : weight})
+    // Note that we use observe here, with a Bernoulli distribution, this optimizes the inference
+    mapData({data: obsData},function(datum) {observe(dist,datum == 'h')})
+    return weight
+}
+
+// We can try SMC as we alernate between observations and samples 
+var post = Infer({method: 'SMC', particles : 5000},model)
+viz(post)
+</pre>
+</p>
+
+<h3> Inference Algorithms and MCMC</h3>
+<pre>
+// We take back our previous example, with unfair coin 
+var baserate = 0.1
+
+// We try the rejection method. If the baserate is too low, most samples will be rejected. 
+var infModel = function(){
+  Infer({method: 'rejection', samples: 100}, function(){
+    var A = flip(baserate)
+    var B = flip(baserate)
+    var C = flip(baserate)
+    condition(A+B+C >= 2)
+    return A})
+}
+
+//With the lodash library, we can compute the average time of an inference algorithm
+var time = function(foo, trials) {
+  var start = _.now()
+  var ret = repeat(trials, foo)
+  var end = _.now()
+  return (end-start)/trials
+}
+
+time(infModel, 10)
+// Try to lower the baserate to 0.01, it should already be slow. 
+</pre>
+On this example, we could also use "enumerate"
+<pre>
+///fold:
+var time = function(foo, trials) {
+  var start = _.now()
+  var ret = repeat(trials, foo)
+  var end = _.now()
+  return (end-start)/trials
+}
+///
+
+var baserate = 0.1
+
+var infModel = function(){
+  Infer({method: 'enumerate'}, function(){
+    var A = flip(baserate)
+    var B = flip(baserate)
+    var C = flip(baserate)
+    condition(A+B+C >= 2)
+    return A})
+}
+
+time(infModel, 10)
+// Try to lower the baserate. What is the impact on time ? Why ? 
+</pre>
+
+<pre>
+///fold:
+//a timing utility: run 'foo' 'trials' times, report average time.
+var time = function(foo, trials) {
+  var start = _.now()
+  var ret = repeat(trials, foo)
+  var end = _.now()
+  return (end-start)/trials
+}
+///
+
+// However, enumerate does not sacle well with the number of samples. 
+// Let us modify the program to test this
+var baserate = 0.1
+var numFlips = 3
+
+var infModel = function(){
+  Infer({method: 'enumerate'}, function(){
+    var choices = repeat(numFlips, function(){flip(baserate)})
+    // Sum computes the sum of all elements in an array 
+    condition(sum(choices) >= 2)
+    return choices[0]})
+}
+
+time(infModel, 10)
+// Try this program with 15 flips. And for rejection, what is the impact of increasing the number of flips ? Why ?
+</pre>
+
+<pre>
+///fold:
+//a timing utility: run 'foo' 'trials' times, report average time.
+var time = function(foo, trials) {
+  var start = _.now()
+  var ret = repeat(trials, foo)
+  var end = _.now()
+  return (end-start)/trials
+}
+///
+// Finally, let's try the MCMC algorithm this time. 
+var baserate = 0.1
+var numFlips = 3
+
+var infModel = function(){
+  Infer({method: 'MCMC', lag: 100}, function(){
+    var choices = repeat(numFlips, function(){flip(baserate)})
+    condition(sum(choices) >= 2)
+    return choices[0]})
+}
+
+time(infModel, 10)
+// You can even try baserate = 0.001 and numFlips = 100 and it should still be rather efficient. 
+// However, what we cannot see here is that what we gain in efficiency, we lose in precision. 
+// But this is a standard tradeoff. 
+</pre>
+
+<h3> Markov Chain Monte Carlo</h3>
+<p><pre>
+// Here is a simple Markov Chain 
+var states = ['S', 'C'];
+var transitionProbs = {S: [.3, .7], C: [.5, .5]}
+
+// The categorical distribution is exactly what we need here
+var transition = function(state){
+  return categorical({vs: states, ps: transitionProbs[state]})
+}
+
+// We repeat n times the transition function
+var chain = function(state, n){
+  return (n == 0 ? state : chain(transition(state), n-1))
+}
+
+print("State after 10 steps:")
+viz.hist(repeat(1000,function() {chain('S',10)}))
+viz.hist(repeat(1000,function() {chain('C',10)}))
+
+print("State after 25 steps:")
+viz.hist(repeat(1000,function() {chain('S',25)}))
+viz.hist(repeat(1000,function() {chain('C',25)}))
+
+print("State after 50 steps:")
+viz.hist(repeat(1000,function() {chain('S',50)}))
+viz.hist(repeat(1000,function() {chain('C',50)}))
 </pre></p>
 
 </body>
