@@ -217,7 +217,19 @@ print(a["name"])
 print(a.length)
 print(a["length"])
 
-</pre></p>
+</pre>
+<pre>
+// Be careful with Object Equality, it compares references and not actual content. 
+// Intuitively, you should never use equality between objects. 
+var a = {"name" : "ficus", "length" : 50}
+var b = {"name" : "ficus", "length" : 50} 
+print("Tests:")
+print(a == b)
+print(a === b)
+print(a == a)
+</pre>
+</p>
+
 
 <p><pre>
 // Arrays 
