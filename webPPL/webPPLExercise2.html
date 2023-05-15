@@ -1,0 +1,352 @@
+<html>
+<head>
+<meta charset="UTF-8"> 
+<script src="webppl.js"></script> <!-- compiled webppl library; get this from https://github.com/probmods/webppl -->
+<script src="webppl-editor.js"></script>
+<script src="webppl-viz.js"></script>
+<script src="draw.js"></script>
+<script src="jquery.js"></script>
+<script src="paper.js"></script>
+<script src="underscore.js"></script>
+<script src="box2d.js"></script>
+<script src="physics.js"></script>
+<link rel="stylesheet" href="webppl-editor.css">
+<link rel="stylesheet" href="webppl-viz.css">
+<link rel="stylesheet" href="styles.css"> 
+<link rel="stylesheet" href="w3.css"> 
+
+</head>
+<body>
+ 
+<p>
+Those exercises are taken from <a href="https://probmods.org/exercises/conditioning.html">probmods</a>. A second version of this page, with 
+the answers, will be available on virtuale after we have done them in class. 
+</p>
+<p>
+BE CAREFUL, YOU CANNOT SAVE YOUR WORK ON THIS PAGE. If you want to keep what you have done, you have to copy everything into a text file. 
+</p> 
+
+<h1> 1) Fair Coins and Biased Coins </h1>
+
+<h3> a) </h3>
+
+<p>
+  I flip a fair coin. What is the probability that it returns true ? Why did we use the exponential function in the code below ?
+</p>
+
+<pre>
+var model = function() {
+  // Your code here
+}
+
+var logProb = Infer({method:'enumerate'}, model).score(true);
+Math.exp(logProb);
+</pre>
+
+<h3> b) </h3>
+
+<p> 
+I also have a biased coin, with P(true)=0.9. 
+I hand you one of the coins (either biased or fair) chosen uniformly randomly without telling you which. You flip it three times.
+Given that first two coin flips returned true, what is the posterior distribution for the next flip?
+</p>
+
+<pre>
+var model = function() {
+  // Your code here
+}
+
+viz.table(Infer({method:'enumerate'}, model));
+</pre>
+
+<h3> c) </h3>
+
+<p>
+Given that all three flips returned true, what is the probability that the coin was biased?
+</p>
+
+<pre>
+var model = function() {
+  // Your code here
+}
+
+viz.table(Infer({method:'enumerate'}, model));
+</pre>
+
+<h3> d) </h3>
+
+<p>
+Given that the first two flips were different, what is the probability that the third flip will be true?
+</p>
+
+<pre>
+var model = function() {
+  // Your code here
+}
+
+viz.table(Infer({method:'enumerate'}, model));
+</pre>
+
+<h1> 2) Conditioning and Intervention </h1>
+
+<p>
+Let us take back a simple example of a generative model for medical diagnosis. 
+</p>
+
+<pre>
+var lungCancer = flip(0.01);
+var cold = flip(0.2);
+var cough = (
+  (cold && flip(0.5)) ||
+  (lungCancer && flip(0.3))
+);
+cough;
+</pre>
+
+<h3> a) </h3> 
+
+<p>
+Show  that intervening (setting lungCancer as either true or false) has the same effect as conditioning (using the condition operator) in this example. 
+Create a table showing the marginal probabilities. What must be true about the causal structure for this to be the case?
+</p>
+
+<pre>
+... 
+</pre>
+
+<h3> b) </h3>
+
+<p>
+This time, modify the program so that intervening and conditioning produce different results. 
+Create a table showing the marginal probabilities. 
+Under what circumstances does intervening produce different results from conditioning?
+</p>
+<p>
+Hint: you do not need to introduce any new variables. Think about what other questions you can ask in this example.
+</p>
+
+<pre>
+... 
+</pre>
+
+<h1> 3) Computing Marginals </h1>
+
+<p>
+Find the marginal distribution of the return values from these programs mathematically (by hand).
+</p>
+
+<h3> a) </h3>
+<pre>
+viz.table(Infer({method: "enumerate"}, function() {
+  var a = flip();
+  var b = flip();
+  condition(a || b);
+  return a;
+}));
+</pre>
+
+<h3> b) </h3>
+
+<pre>
+var smilesModel = function() {
+  var nice = mem(function(person) { flip(.7) });
+  
+  var smiles = function(person) {
+    return nice(person) ? flip(.8) : flip(.5);
+  }
+  
+  condition(smiles('alice') && smiles('bob') && smiles('alice'));
+  
+  return nice('alice');
+}
+
+viz.table(Infer({method: "enumerate"}, smilesModel));
+</pre>
+
+<h1> 4) Extending the Smiles Model</h1>
+
+<h3> a) </h3>
+
+<p> Describe (using ordinary English) the smilesModel program in Exercise 3.b)</p>
+
+<h3> b) </h3>
+
+<p> 
+Extend smilesModel to create a version of the model considers two additional factors:
+
+  <ol>
+  <li>People will smile 80% of the time if they want something from you and if they do not, they follow the previous model </li>
+  <li>Nice people will only want something from you 20% of the time; non-nice people 50% of the time. </li>
+  </ol>
+  
+Hint: Which variables change at different times for the same person?
+Verify that you model is correct using some tests (with conditioning). 
+</p>
+
+<pre>
+var extendedSmilesModel = function() {
+  var nice = mem(function(person) { flip(.7) });
+ // your code here
+}
+
+Infer({method: "enumerate"}, extendedSmilesModel)
+</pre>
+
+<h3> c) </h3>
+
+<p>
+  Suppose you’ve seen Bob five times this week and each time, he was not smiling. 
+  But today, you see Bob and he is smiling. 
+  Use this extendedSmilesModel model to compute the posterior belief that Bob wants something from you today.
+
+  Hint: How will you represent the same person (Bob) not-smiling multiple times? 
+  What features of Bob will stay the same each time he smiles (or doesn’t) and what features will change?
+</p>
+
+<pre>
+var extendedSmilesModel = function() {
+  // copy your code frome above
+
+  // make the appropriate observations
+
+  // return the appropriate query
+  return ...;
+}
+
+
+viz.table(Infer({method: "enumerate"}, extendedSmilesModel));
+</pre>
+
+<h1> 5) Sprinklers and Rain </h1>
+
+<h3> a) </h3>
+
+<p>
+I have a particularly bad model of the sprinkler in my garden. 
+It is supposed to water my grass every morning, but is turns on only half the time (at random, as far as I can tell). 
+Fortunately, I live in a city where it also rains 30% of days. </p>
+
+<p>
+One day I check my lawn and see that it is wet, meaning that either it rained that morning or my sprinkler turned on (or both).
+</p>
+
+<p>
+Answer the following questions, either using the Rules of Probability or by writing your own sprinkler model in webppl.
+<ol>
+  <li> What is the probability that it rained? </li>
+  <li> What is the probability that my sprinkler turned on </li>
+  </ol>
+</p>
+
+<pre>
+...
+</pre>
+
+<h3> b) </h3>
+
+<p> My neighbour Kelsey, who has the same kind of sprinkler, tells me that her lawn was also wet that same morning. 
+What is the new posterior probability that it rained? 
+</p>
+
+<pre>
+...
+</pre>
+
+<h3> c) </h3>
+
+<p>
+  To investigate further we poll a selection of our friends who live nearby, and ask if their grass was wet this morning. 
+  Kevin and Manu and Josh, each with the same sprinkler, all agree that their lawns were wet too. 
+  Write a model to reason about all 5 people (including me and Kelsey), and then use it to find the probability that it rained.
+</p>
+
+<pre>
+... 
+</pre>
+
+<h1> 6) Priors and Predictives </h1>
+
+<p>
+In the poll example, we compared the parameter priors and posteriors to the corresponding predictives which tell us what data we should expect given our prior and posterior beliefs. 
+</p>
+
+<pre>
+// observed data
+var k = 1; // number of successes
+var n = 20;  // number of attempts
+var priorDist = Uniform({a: 0, b: 1});
+
+var model = function() {
+   var p = sample(priorDist);
+
+   // Observed k number of successes, assuming a binomial
+   observe(Binomial({p : p, n: n}), k);
+
+   // sample from binomial with updated p
+   var posteriorPredictive = binomial(p, n);
+
+   // sample fresh p (for visualization)
+   var prior_p = sample(priorDist);
+   // sample from binomial with fresh p (for visualization)
+   var priorPredictive = binomial(prior_p, n);
+
+   return {
+       prior: prior_p, priorPredictive : priorPredictive,
+       posterior : p, posteriorPredictive : posteriorPredictive
+   };
+}
+
+var opts = {method: "MCMC", samples: 2500, lag: 50};
+var posterior = Infer(opts, model);
+
+viz.marginals(posterior);
+</pre>
+
+<p> 
+Notice that we used a uniform distribution over the interval [0, 1] as our prior, reflecting our assumption that a probability must lie between 0 and 1 but otherwise remaining doubtful to which values are most likely to be the case. 
+While this is convenient, we may want to represent other assumptions.
+</p>
+
+<p>
+The Beta distribution, expressed in WebPPL as Beta({a:..., b:...})’ is a more general way of expressing beliefs over the interval [0,1]. 
+The beta distribution is what is called the conjugate prior probability distribution for the binomial distribution due to its relationship between the prior and the posterior, and it also has a really neat interpretation that we will explore in this problem.
+</p>
+
+<p>
+You may want to visualize the beta distribution a few times with different parameters to get a sense of its shape.
+<ol>
+  <li>Beta(1, 1)</li>
+  <li>Beta(3, 3)</li>
+  <li>Beta(50, 50)</li>
+  <li>Beta(1, 10)</li>
+  <li>Beta(10, 1)</li>
+  <li>Beta(0.2, 0.2)</li>
+</ol>
+</p>
+
+<pre>
+viz(Beta({a:1, b: 1}))
+// viz(repeat(10000, function() { sample(Beta({a:1, b: 1})) }));
+</pre>
+
+<p>
+  Using the code above, answer the following questions.
+  <ol>
+    
+    <li> Run the code as is. How does the posterior compare to beta(2, 20)? </li>
+    <li> Set the prior to beta(1, 1). What do you notice about the posterior distribution? </li>
+    <li> Set n = 10 and the prior to beta(1, 11). What do you notice about the posterior distribution?</li>
+    <li> Set k = 5, n = 15, and the prior to beta(1, 1). Compare the posterior to beta(6, 11).</li>
+    <li> Set k = 4, n = 10, and the prior to beta(1, 1). What values of a and b would of beta(a, b) would the posterior look like?</li>
+    <li> Set k = 10 and n = 20. What values of a and b would a prior of beta(a, b) make the posterior look like beta(12, 10)?</li>
+    <li> Based on these observations (and any others you may have tried), what is the relationship between the beta distribution and the binomial distribution?</li>
+  </ol>
+</p>
+
+</body>
+<script>
+// find all <pre> elements and set up the editor on them
+var preEls = Array.prototype.slice.call(document.querySelectorAll("pre"));
+preEls.map(function(el) { editor.setup(el, {language: 'webppl'}); });
+</script>
+</html>
