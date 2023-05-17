@@ -1,0 +1,381 @@
+<html>
+<head>
+<meta charset="UTF-8"> 
+<script src="webppl.js"></script> <!-- compiled webppl library; get this from https://github.com/probmods/webppl -->
+<script src="webppl-editor.js"></script>
+<script src="webppl-viz.js"></script>
+<script src="draw.js"></script>
+<script src="jquery.js"></script>
+<script src="paper.js"></script>
+<script src="underscore.js"></script>
+<script src="box2d.js"></script>
+<script src="physics.js"></script>
+<link rel="stylesheet" href="webppl-editor.css">
+<link rel="stylesheet" href="webppl-viz.css">
+<link rel="stylesheet" href="styles.css"> 
+<link rel="stylesheet" href="w3.css"> 
+
+</head>
+<body>
+ 
+<h1> 1) Functional Programming </h1>
+
+<h3> 1.1) Simple Example</h3>
+<p>
+Consider the following function of two numbers, written in WebPPL: 
+<pre>
+var g = function(a,b) {
+  var f = function(a,b) {
+    if (b > 0) {
+      return (a + b)
+    }
+    else {
+      return (a - b)
+    }
+  }
+  return f(a,b)
+}
+</pre>
+
+What does this function do ? Can you propose a program computing the same function, but in an easier way ? 
+</p>
+
+<p class = solution>
+SOLUTION: This function adds a with the absolute value of b. Another way to write this would be to compute the absolute value directly, or use the 
+Math library. 
+</p>
+<p>
+<pre>
+// If I want to redifine the abs function
+var myAbs = function(x) {
+  (x > 0) ? x : -x
+}
+
+var g = function(a,b) {
+  return a + myAbs(b)
+}
+
+// Otherwise, we can just use the Math library if we know it exists. 
+var g2 = function(a,b) {
+  return a + Math.abs(b)
+}
+
+// Some tests
+display([g(5,5),g(5,-5),g2(5,5),g2(5,-5)])
+</pre>
+</p>
+
+
+<h3> 1.2) Newton's Method</h3>
+<p> 
+The Newton's Method (<a href="https://en.wikipedia.org/wiki/Newton%27s_method">wikipedia</a>) is a well-known method to approximate a function. 
+We will not detail how it works, but we will see a use on a well-known example: Estimating the square root of 2. 
+</p>
+
+<p> 
+a) Show that the square root of 2 is a fixpoint of the function f(x) = (x / 2) + 1/x (ie, show that f(√2) = √2)
+</p>
+
+<p class = solution>
+SOLUTION: We have to verify that (√2 / 2) + 1 / √2 = (2 * √2 / 2) = √2
+</p>
+
+<p> 
+b) The Newton's Method says that, under some hypothesis, you can estimate a number r by iterating recursively a function f for which r is a fixpoint. 
+Let us try this in webPPL. Write a higher-order program "applyN", that takes as an argument a number x, a function f, a number n, and compute f(f(f(f(f(...x...))))),
+repeated n times. Verify your program by using defining function "incr" that increases its argument by 1, and applyN(x,incr,n) should be equal to x + n.  
+</p>
+
+<p class = solution>
+  SOLUTION:
+</p>
+
+<pre>
+var applyN = function(x,f,n) {
+  if (n == 0) {
+    // Applying f "0 time", means that we just return the initial element x
+    return x
+  }
+  else {
+    // Otherwise, we apply f once, giving us f(x)
+    // And then, we apply f (n-1) times. 
+    return applyN(f(x),f,n-1)
+  }
+}
+
+var incr = function(x) {
+  return x+1
+}
+
+applyN(5,incr,10) // Should be equal to 15. 
+</pre>
+
+<p>c) Copy/Paste the function applyN you defined above. And use it to iterate once, twice, 5 times and 100 times the function f(x) = (x / 2) + 1/x starting from 1. 
+  Compare this result with the square root of 2. What can you deduce ? </p>
+
+<p class = solution> SOLUTION:</p>
+<pre>
+display(Math.sqrt(2))
+
+var applyN = function(x,f,n) {
+  if (n == 0) {
+    return x
+  }
+  else {
+    return applyN(f(x),f,n-1)
+  }
+}
+
+// We define the function f 
+var f = function(x) {return (x/2 + 1/x )}
+
+// We apply it with n=1, n=2, n=5, n=100, starting from x=1, and we display. 
+display(applyN(1,f,1))
+display(applyN(1,f,2))
+display(applyN(1,f,5))
+display(applyN(1,f,100))
+</pre>
+
+<p class = solution> As we can see, we very quickly converge to the actual value of the square root of 2. This is very efficient. </p>
+
+<p>d) In the general case, if you want to find the square root of R, you can use the function f(x) = (x / 2) + (R / 2x). Verify that this works with the 
+  square root of 3. 
+</p>
+
+<p class = solution>
+SOLUTION: Intuitively, this is because, (√R / 2) + (R / 2 * √R) = (2R / 2 * √R) = √R, so we have again a fixpoint.  
+</p>
+
+<pre>
+display(Math.sqrt(3))
+
+var applyN = function(x,f,n) {
+  if (n == 0) {
+    return x
+  }
+  else {
+    return applyN(f(x),f,n-1)
+  }
+}
+
+// We define the function f 
+var f = function(x) {return (x/2 + 3/(2 *x) )}
+
+// We apply it with n=1, n=2, n=5, n=100, starting from x=1, and we display. 
+display(applyN(1,f,1))
+display(applyN(1,f,2))
+display(applyN(1,f,5))
+display(applyN(1,f,100))
+</pre>
+
+<h1> 2) Generative Models</h1>
+
+<h3> 2.1) Simple Examples</h3>
+<p>
+a) Show mathematically that the marginal distribution on return values for these three programs is the same by directly computing the probability using the rules of probability 
+(hint: write down each possible history of random choices for each program).
+
+<pre>
+flip() ? flip(0.6) : flip(0.2)
+</pre>
+<pre>
+flip(flip() ? 0.6 : 0.2)
+</pre>
+<pre>
+flip(.4)
+</pre>
+</p>
+
+<p class = solution> 
+SOLUTION: For the two first program, the choices are exactly the same: with probability 1/2, we do flip(0.6) and with probability 1/2, we do flip(0.2)
+<br>
+From this, we can obtain true with probability P(true) = 0.5 * 0.6 + 0.5 * 0.2 = 0.4
+<br>
+This is exactly the probablity of the last program.  
+</p>
+
+<p>
+b) Check your answers by sampling from the programs, 1000 times each, and plotting the results.
+</p>
+
+<p class = solution>
+SOLUTION : We just have to remember to define thunk function in order to repeat. 
+</p>
+<p>
+<pre>
+viz(repeat(1000,function() {flip() ? flip(0.6) : flip(0.2)}))
+</pre>
+<pre>
+viz(repeat(1000,function() {flip(flip() ? 0.6 : 0.2)}))
+</pre>
+<pre>
+viz(repeat(1000,function() {flip(.4)}))
+</pre>
+</p>
+
+<h3> 2.2) Persistent Randomness </h3>
+<p>
+a) Explain why these two programs give different answers (i.e. have different distributions on return values).
+<pre>
+var foo = flip()
+display([foo, foo, foo])
+</pre>
+<pre>
+var foo = function() { return flip() }
+display([foo(), foo(), foo()])
+</pre>
+</p>
+
+<p class = solution>
+SOLUTION: Those two programs give different answers because the first one repeat a data chosen randomly (true or false) three times, thus we can only obtain either 
+[true,true,true] or [false, false, false]
+<br>
+The second program actually flip a coin for each element of the list, thus we can have all the 8 possibilities of combinations of true and false. 
+</p>
+
+<p>
+b) Modify the second program using mem so that it has the same distribution as the first program.
+</p>
+
+<p class = solution>
+SOLUTION: This is exactly the definition of memoization to duplicate the result. Thus we can do: 
+</p>
+<pre>
+var foo = mem(function() { return flip() })
+display([foo(), foo(), foo()])
+</pre>
+
+<p>
+c) Change the program in question b so that the first two elements in the list are always the same as each other, but the third element can be different. 
+Optional challenge: try to do this by adding only these 4 characters: x, 0, 0, and 1.
+</p>
+<p class = solution>
+SOLUTION : We give an argument to the foo function. 
+</p>
+<pre>
+var foo = mem(function(x) { return flip() })
+display([foo(0), foo(0), foo(1)])
+</pre>
+
+
+<h3> 2.3) Medical Diagnosis</h3>
+<p> In the simple medical diagnosis example, we imagined a generative process for diseases and symptoms of a single patient. 
+In this exercise, we’ll write a version of that model that represents the diseases and symptoms of many patients.
+</p>
+
+<p> 
+a) Let’s look at just two common conditions (a cold and allergies) and just two symptoms (sneeze and fever),
+and let’s assume that symptoms are deterministic.
+</p>
+
+<pre>
+var allergies = flip(0.3)
+var cold = flip(0.2)
+
+var sneeze = cold || allergies
+var fever = cold
+
+display([sneeze, fever])
+</pre>
+<p>Under this model, what is the probability that the patient is sneezing? 
+What is the probability that the patient is sneezing and has a fever?
+</p>
+
+<p class = solution>
+To compute the probability that a patient is sneezing, we look at the probability that the patient is not sneezing, ie that he does not have 
+a cold nor an allergy. This probability is equal to 
+<br>
+P(not sneezing) = 0.7 * 0.8 = 0.56
+<br> 
+Thus, the probability of sneezing is 0.44. To be both sneezing and having a fever, the patient need to have a cold. Thus the probability is 0.2.
+</p>
+
+
+<p> 
+b) Inspect the joint probability distributions of sneeze and fever using Infer.
+</p>
+<pre>
+var dist = Infer({method: "forward", samples: 1000}, function() {
+  // We can just copy-paste the model above
+  var allergies = flip(0.3)
+  var cold = flip(0.2)
+
+  var sneeze = cold || allergies
+  var fever = cold
+  // We return an object with two properties, called sneeze and fever. 
+  return { sneeze, fever }
+})
+
+viz(dist) 
+
+//The vizualisation is a bit bad automatically, thus we can use the table to have something more satisfactory. 
+viz.table(dist) 
+</pre>
+
+
+<p>
+c) If we wanted to represent the diseases of many patients we might have tried to make each disease and symptom into a function from a person 
+to whether they have that disease, like this:
+<pre>
+var allergies = function(person) { return flip(.3) }
+var cold = function(person) { return flip(.2) }
+
+var sneeze = function(person) { return cold(person) || allergies(person) }
+
+display([sneeze('bob'), sneeze('alice')])
+</pre>
+Add fever to the program above, and use Infer to inspect the probability distribution over Bob’s symptoms.
+Is this the same probability distribution that you computed for the single patient in question a? 
+If not, what can you do to fix this program to capture our intuitions correctly?
+</p>
+
+<p class = solution>
+SOLUTION: If we add fever to the program above naively, and then infer on bob we obtain: 
+</p>
+
+<pre>
+var model = function() {
+  var allergies = function(person) { return flip(.3) }
+  var cold = function(person) { return flip(.2) }
+
+  var sneeze = function(person) { return cold(person) || allergies(person) }
+  var fever = function(person) {return cold(person)}
+
+  return [sneeze('bob'),fever('bob')]
+}
+
+var dist = Infer(model)
+
+viz(dist)
+viz.table(dist)
+</pre>
+
+<p class = solution>
+  This is not the same probablity as before. In particular, Bob can have a fever without sneezing, which cas not possible before. 
+  This is because the diseases of bob are not persistent in this model, thus the model may consider that bob have a cold when computing 
+  the sneeze function, but that he may not have one when computing the fever function. In order to capture our intuition, we need to use mem
+</p>
+<pre>
+var model = function() {
+  var allergies = mem(function(person) { return flip(.3) })
+  var cold = mem(function(person) { return flip(.2) })
+
+  var sneeze = function(person) { return cold(person) || allergies(person) }
+  var fever = function(person) {return cold(person)}
+
+  return [sneeze('bob'),fever('bob')]
+}
+
+var dist = Infer(model)
+
+viz(dist)
+viz.table(dist)
+</pre>
+
+</body>
+<script>
+// find all <pre> elements and set up the editor on them
+var preEls = Array.prototype.slice.call(document.querySelectorAll("pre"));
+preEls.map(function(el) { editor.setup(el, {language: 'webppl'}); });
+</script>
+</html>
