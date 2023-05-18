@@ -1,0 +1,171 @@
+<html>
+<head>
+<meta charset="UTF-8"> 
+<script src="webppl.js"></script> <!-- compiled webppl library; get this from https://github.com/probmods/webppl -->
+<script src="webppl-editor.js"></script>
+<script src="webppl-viz.js"></script>
+<script src="draw.js"></script>
+<script src="jquery.js"></script>
+<script src="paper.js"></script>
+<script src="underscore.js"></script>
+<script src="box2d.js"></script>
+<script src="physics.js"></script>
+<link rel="stylesheet" href="webppl-editor.css">
+<link rel="stylesheet" href="webppl-viz.css">
+<link rel="stylesheet" href="styles.css"> 
+<link rel="stylesheet" href="w3.css"> 
+
+</head>
+<body>
+
+    <div class="w3-bar w3-black">
+        <a href="webPPLModule.html" class="w3-bar-item w3-button w3-mobile">Intro</a>
+        <a href="webPPLChapter1.html" class="w3-bar-item w3-button w3-mobile">Chapter 1: The Core Language</a>
+        <a href="webPPLChapter2.html" class="w3-bar-item w3-button w3-mobile">Chapter 2: Forward Models</a>
+        <a href="webPPLChapter3.html" class="w3-bar-item w3-button w3-mobile ">Chapter 3: Conditioning</a>
+        <a href="webPPLChapter4.html" class="w3-bar-item w3-button w3-mobile w3-green">Chapter 4: Inference Algorithms</a>
+    </div> 
+  
+<h3> Inference Algorithms</h3>
+<pre>
+// We take back our previous example, with unfair coin 
+var baserate = 0.1
+
+// We try the rejection method. If the baserate is too low, most samples will be rejected. 
+var infModel = function(){
+  Infer({method: 'rejection', samples: 100}, function(){
+    var A = flip(baserate)
+    var B = flip(baserate)
+    var C = flip(baserate)
+    condition(A+B+C >= 2)
+    return A})
+}
+
+//With the lodash library, we can compute the average time of an inference algorithm
+var time = function(foo, trials) {
+  var start = _.now()
+  var ret = repeat(trials, foo)
+  var end = _.now()
+  return (end-start)/trials
+}
+
+time(infModel, 10)
+// Try to lower the baserate to 0.01, it should already be slow. 
+</pre>
+On this example, we could also use "enumerate"
+<pre>
+///fold:
+var time = function(foo, trials) {
+  var start = _.now()
+  var ret = repeat(trials, foo)
+  var end = _.now()
+  return (end-start)/trials
+}
+///
+
+var baserate = 0.1
+
+var infModel = function(){
+  Infer({method: 'enumerate'}, function(){
+    var A = flip(baserate)
+    var B = flip(baserate)
+    var C = flip(baserate)
+    condition(A+B+C >= 2)
+    return A})
+}
+
+time(infModel, 10)
+// Try to lower the baserate. What is the impact on time ? Why ? 
+</pre>
+
+<pre>
+///fold:
+//a timing utility: run 'foo' 'trials' times, report average time.
+var time = function(foo, trials) {
+  var start = _.now()
+  var ret = repeat(trials, foo)
+  var end = _.now()
+  return (end-start)/trials
+}
+///
+
+// However, enumerate does not scale well with the number of samples. 
+// Let us modify the program to test this
+var baserate = 0.1
+var numFlips = 3
+
+var infModel = function(){
+  Infer({method: 'enumerate'}, function(){
+    var choices = repeat(numFlips, function(){flip(baserate)})
+    // Sum computes the sum of all elements in an array 
+    condition(sum(choices) >= 2)
+    return choices[0]})
+}
+
+time(infModel, 10)
+// Try this program with 15 flips. And for rejection, what is the impact of increasing the number of flips ? Why ?
+</pre>
+
+<pre>
+///fold:
+//a timing utility: run 'foo' 'trials' times, report average time.
+var time = function(foo, trials) {
+  var start = _.now()
+  var ret = repeat(trials, foo)
+  var end = _.now()
+  return (end-start)/trials
+}
+///
+// Finally, let's try the MCMC algorithm this time. 
+var baserate = 0.1
+var numFlips = 3
+
+var infModel = function(){
+  Infer({method: 'MCMC', lag: 100}, function(){
+    var choices = repeat(numFlips, function(){flip(baserate)})
+    condition(sum(choices) >= 2)
+    return choices[0]})
+}
+
+time(infModel, 10)
+// You can even try baserate = 0.001 and numFlips = 100 and it should still be rather efficient. 
+// However, what we cannot see here is that what we gain in efficiency, we lose in precision. 
+// But this is a standard tradeoff. 
+</pre>
+
+<h3> Markov Chain Monte Carlo</h3>
+<p><pre>
+// Here is a simple Markov Chain 
+var states = ['S', 'C'];
+var transitionProbs = {S: [.3, .7], C: [.5, .5]}
+
+// The categorical distribution is exactly what we need here
+var transition = function(state){
+  return categorical({vs: states, ps: transitionProbs[state]})
+}
+
+// We repeat n times the transition function
+var chain = function(state, n){
+  return (n == 0 ? state : chain(transition(state), n-1))
+}
+
+print("State after 10 steps:")
+viz.hist(repeat(1000,function() {chain('S',10)}))
+viz.hist(repeat(1000,function() {chain('C',10)}))
+
+print("State after 25 steps:")
+viz.hist(repeat(1000,function() {chain('S',25)}))
+viz.hist(repeat(1000,function() {chain('C',25)}))
+
+print("State after 50 steps:")
+viz.hist(repeat(1000,function() {chain('S',50)}))
+viz.hist(repeat(1000,function() {chain('C',50)}))
+</pre></p>
+
+</body>
+<script>
+// find all <pre> elements and set up the editor on them
+var preEls = Array.prototype.slice.call(document.querySelectorAll("pre"));
+preEls.map(function(el) { editor.setup(el, {language: 'webppl'}); });
+</script>
+</html>
