@@ -26,7 +26,7 @@
         <a href="webPPLChapter4.html" class="w3-bar-item w3-button w3-mobile w3-green">Chapter 4: Inference Algorithms</a>
     </div> 
   
-<h3> Inference Algorithms</h3>
+<h3> Comparisons of Algorithms </h3>
 <pre>
 // We take back our previous example, with unfair coin 
 var baserate = 0.1
@@ -133,7 +133,35 @@ time(infModel, 10)
 // But this is a standard tradeoff. 
 </pre>
 
-<h3> Markov Chain Monte Carlo</h3>
+<h3> Rejection Sampling and Observe</h3>
+
+<p>
+<pre>
+//Try to run this model.   
+var model = function(){
+  var trueX = sample(Gaussian({mu: 0, sigma: 1}))
+  var obsX = sample(Gaussian({mu: trueX, sigma: 0.1}))
+  condition(obsX == 0.2)
+  return trueX
+}
+viz(Infer({method: 'rejection', samples:1}, model))
+// This should fail. Indeed, the condition is almost impossible to satisfy, a random sample will not satisfy the condition. 
+</pre>
+
+<pre>
+// With oberve, this will work. 
+var model = function(){
+  var trueX = sample(Gaussian({mu: 0, sigma: 1}))
+  observe(Gaussian({mu: trueX, sigma: 0.1}), 0.2)
+  return trueX
+}
+viz(Infer({method: 'rejection', samples:1000, maxScore: 2}, model))
+//However, you need to precise that the "maxScore" should be different from the default value ("0").
+//Try to remove this option, why does rejection sampling "naively" should not work ? 
+</pre>
+</p>
+
+<h3> Markov Chains</h3>
 <p><pre>
 // Here is a simple Markov Chain 
 var states = ['S', 'C'];
@@ -161,6 +189,73 @@ print("State after 50 steps:")
 viz.hist(repeat(1000,function() {chain('S',50)}))
 viz.hist(repeat(1000,function() {chain('C',50)}))
 </pre></p>
+
+<p> Metropolis Hasting on the Example of Trick Dice. 
+<pre>
+// Dice
+var dice = function() {
+  return randomInteger(6) + 1
+}
+
+// Computing the Acceptance Rate for our example
+var alpha = function(n,m) {
+  return Math.min(1,((m == 6) ? 5 : 1) / ((n == 6) ? 5 : 1))
+}
+
+// The MH algorithm
+var myMH = function(Nsamples) {
+  var myMHloop = function(n,l) {
+    if (n == 0) {return l}
+    else {
+      var x = l[l.length - 1]; 
+      var y = dice(); 
+      (flip(alpha(x,y))) ? l.push(y) : l.push(x) ;
+      myMHloop(n-1,l) 
+    }
+  }
+  return myMHloop(Nsamples,[1])
+}
+print(myMH(1000))
+viz(myMH(1000))
+// Remark that the frequencies are correct, but the samples are not independent (big blocks of 6)!
+</pre>
+</p>
+
+<p>
+<pre>
+// Geometric Distribution 
+var geometric = function() {
+    (flip()) ? 0 : (1 + geometric())
+}
+
+viz(repeat(10000,geometric))
+
+</pre>
+
+<pre>
+// Computing the acceptance rate for the Geometric Distribution
+var alpha = function(n,i) {
+  return (n == 0) ? 1/4 :((i == 1) ? 1/2 : 1) 
+}
+
+// The MH algorithm
+var myMH = function(Nsamples) {
+  var myMHloop = function(n,l) {
+    if (n == 0) {return l}
+    else {
+      var x = l[l.length - 1]; 
+      var y = (x == 0) ? 1 : ((flip()) ? x+1 : x-1); 
+      (flip(alpha(x,y-x))) ? l.push(y) : l.push(x) ;
+      myMHloop(n-1,l) 
+    }
+  }
+  return myMHloop(Nsamples,[0])
+}
+print(myMH(10000))
+viz(myMH(10000))
+// You can try to change the initial state and look at the first samples
+</pre>
+</p>
 
 </body>
 <script>
