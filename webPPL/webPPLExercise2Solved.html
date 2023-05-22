@@ -517,14 +517,14 @@ viz(Beta({a:1, b: 1}))
     <li> Set n = 10 and the prior to beta(1, 11). What do you notice about the posterior distribution?</li>
     <li> Set k = 5, n = 15, and the prior to beta(1, 1). Compare the posterior to beta(6, 11).</li>
     <li> Set k = 4, n = 10, and the prior to beta(1, 1). What values of a and b would of beta(a, b) would the posterior look like?</li>
-    <li> Set k = 10 and n = 20. What values of a and b would a prior of beta(a, b) make the posterior look like beta(12, 10)?</li>
+    <li> Set k = 10 and n = 20. What values of a and b would a prior of beta(a, b) make the posterior look like beta(12, 11)?</li>
     <li> Based on these observations (and any others you may have tried), what is the relationship between the beta distribution and the binomial distribution?</li>
   </ol>
 </p>
 
 <p class = solution> SOLUTION: You should see that for the 4 first question, the posterior distribution is actually very similar to the beta distribution <br>
 At question 5, you should see a similarity with Beta(5,7) <br> 
-At question 6, you should pose the prior equal to Beta(2,0) <br> 
+At question 6, you should pose the prior equal to Beta(2,1) <br> 
 The relation is actually that if the prior is Beta(A,B) and you observe k sucesses and (n-k) failures, then the posterior distribution is Beta(A + k, B + n - k) <br> 
 Intuitively, if we start believing that our distribution is a Beta, and the tests are given by a Binomial function, then the posterior belief will also be a Beta. 
 We say that the beta distribution is the conjugate prior of the Binomial distribution.  
