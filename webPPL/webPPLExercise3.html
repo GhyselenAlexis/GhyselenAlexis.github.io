@@ -1,0 +1,298 @@
+<html>
+<head>
+<meta charset="UTF-8"> 
+<script src="webppl.js"></script> <!-- compiled webppl library; get this from https://github.com/probmods/webppl -->
+<script src="webppl-editor.js"></script>
+<script src="webppl-viz.js"></script>
+<script src="draw.js"></script>
+<script src="jquery.js"></script>
+<script src="paper.js"></script>
+<script src="underscore.js"></script>
+<script src="box2d.js"></script>
+<script src="physics.js"></script>
+<link rel="stylesheet" href="webppl-editor.css">
+<link rel="stylesheet" href="webppl-viz.css">
+<link rel="stylesheet" href="styles.css"> 
+<link rel="stylesheet" href="w3.css"> 
+
+</head>
+<body>
+ 
+<p>
+Those exercises are taken from <a href="https://probmods.org/exercises/conditioning.html">probmods</a>. A second version of this page, with 
+the answers, will be available on virtuale after we have done them in class. 
+</p>
+<p>
+BE CAREFUL, YOU CANNOT SAVE YOUR WORK ON THIS PAGE. If you want to keep what you have done, you have to copy everything into a text file. 
+</p> 
+
+<h1> Layers of Learning : Hierarchical Models</h1>
+
+<h2> A simple bag model</h2>
+
+<p>
+  Let us consider a simple model of a bag of colored balls. A bag can contain some balls of some colors (blue,red or green), and you want to infer 
+  the distribution of the bag (the proportion of each color compared to the others). In order to do that, you can sample from a bag by getting one 
+  ball at random, and putting it back into the bag. 
+
+  Let us try to model this naively. We want to define a bag as a Categorical distribution. Let us start by giving random parameter to this distribution,
+  by taking a uniform real for each parameter. 
+</p>
+
+<pre>
+var colors = ["blue","red","green"]
+  
+var makeBag = function() {
+  // We define the probability array as an array of numbers sampled uniformly
+  var ps = repeat(colors.length,function() {return uniform(0,1)})
+  return Categorical({ps, vs : colors})
+}
+
+// We can vizualize a bag 
+viz(makeBag())
+</pre>
+
+<h3> a) </h3>
+
+<p>
+What is the prior distribution over the parameter ps ? Make a model that creates a bag, and then take one sample from this bag. 
+What is the prior predictive distribution over this sample ? 
+</p>
+
+<pre>
+var colors = ["blue","red","green"]
+  
+var makeBag = function() {
+  var ps = repeat(colors.length,function() {return uniform(0,1)})
+  return Categorical({ps, vs : colors})
+}
+
+// Your code here 
+
+</pre>
+
+<h3> b) </h3>
+
+<p>
+We are given one bag, that we observe, as described in the data variable. Compute the posterior distribution over the parameter ps for this bag, 
+and the posterior predictive distribution over a sample from this bag. Which distribution is more informative ?  
+</p>
+
+<pre>
+var colors = ["blue","red","green"]
+
+var data = ["green","green","green","green","green","green","blue"]
+  
+var makeBag = function() {
+  var ps = repeat(colors.length,function() {return uniform(0,1)})
+  return Categorical({ps, vs : colors})
+}
+
+// Your code here
+</pre>
+
+<h2> Adding more bags</h2>
+
+<h3> c)</h3>
+
+<p> Now, let us extend the model to add more bags. We want to modify the function makeBag to give a number as an argument, thus obtaining 
+  different bags, obtained with makeBag(1), makeBag(2). In particular we want those bags to be persistent, if we call makeBag with the same 
+  argument in the same execution, we should obtain the same result. <br>
+  We also have new observations, indexed by the number of the bag the observation was made. 
+  Update your previous answer to take those modifications into account, and observe the posterior predictive distribution over all three bags.  
+  (You can use viz.marginals to decompose an output into its component and vizualize them)
+</p>
+
+<pre>
+var colors = ["blue","red","green"]
+
+var data = [{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"}, {bag: 1, color: "blue"},
+{bag: 2, color: "blue"},{bag: 2, color: "blue"},{bag: 2, color: "blue"},{bag: 2, color: "blue"},{bag: 2, color: "red"},
+{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"}]
+  
+// Your code here 
+</pre>
+
+<h2> Dirichlet Distribution</h2>
+
+<h3> d) </h3>
+
+<p>As a human, you should make one simple observation from this data: bags seems to be majoritarly one color. 
+  However, our current model cannot infer something like this, we can reason about each bag, but we cannot reason about 
+the set of all bags. If we want to do this, we should add a way to reason about the "makeBag" function.  </p>
+
+<p> In order to do this, we will change our parameters, and our prior distribution over parameters. But first, we will see why 
+  our current prior distribution is not well-fitted for efficiency
+</p>
+
+<p> Recall that the categorical distribution over an array ps compute the normalized probability of this array. In particular,
+  the two arrays ps1 = [1,1,1] and ps2 = [2,2,2] compute the same distribution. <br>
+  With this representation, the current dimension of ps is 3, but actually if we remove arrays that produce the same distribution,
+  the dimension should be lower. Justify that in fact, this dimension should be 2 (consider the ratios or the normalized probability)
+</p>
+
+<h3> e) </h3>
+
+<p> Thus, we have one problem: in our prior distribution, we actually have a state of dimension 3, where we actually only need a state of dimension 2. 
+  Obviously, this decreases the efficiency of algorithm. In order to get rid of this we could try to make something with our hands, and it will 
+  not be too hard, but as you can expect, this is something that is already computed in webPPL.  
+</p>
+
+<p> Sample and Vizualize the following distributions. What is the actual dimension of the output of dist1 ? What is the distribution over the sum of 
+  all three data point for dist2 ? You can also try to modify the vector given as an input of the Dirichlet distribution and see how it behaves.  
+</p>
+
+
+<pre>
+var dist1 = Dirichlet({alpha: Vector([1,1])})
+var dist2 = Dirichlet({alpha: Vector([1,1,1])})
+
+// Your code here 
+</pre>
+
+<h3> f) </h3>
+
+<p> Take back the previous model for the bags, and replace the prior distribution with dist2 described above. Do you see any change in the inferred 
+  distributions ? Should you be surprised ? 
+  You can also change the values of the parameters of the Dirichlet distribution and observe the modifications. 
+</p>
+
+
+<pre>
+ var colors = ["blue","red","green"]
+
+var data = [{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"}, {bag: 1, color: "blue"},
+{bag: 2, color: "blue"},{bag: 2, color: "blue"},{bag: 2, color: "blue"},{bag: 2, color: "blue"},{bag: 2, color: "red"},
+{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"}]
+  
+// Your code here 
+</pre>
+
+<h3> g) </h3>
+
+<p>Actually, similarly to what we saw for the Beta distribution, the Dirichlet distribution is the conjugate prior for the categorical distribution
+  as the likelihood function. When you increase the value of a parameter by 1, it is as if you had one more sample from this color. 
+</p>
+
+<p> We will now add one layer of reasoning to our program. Instead of taking ps as dirichlet(1,1,1), we add a factor to take into account the fact 
+  that bags can be more or less distributed around one color. Take a coefficient factor alpha, between 1 and 5, and randomly either multiply the 
+  vector of one by alpha or divide it by alpha. Make this construction outside of the makeBag function (why ?). 
+  The dirichlet of this new array is your new prior distribution. What it the posterior predictive distribution over a sample from a new bag ? 
+</p>
+
+<pre>
+ var colors = ["blue","red","green"]
+
+var data = [{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"}, {bag: 1, color: "blue"},
+{bag: 2, color: "blue"},{bag: 2, color: "blue"},{bag: 2, color: "blue"},{bag: 2, color: "blue"},{bag: 2, color: "red"},
+{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"},{bag: 3, color: "red"}]
+
+// Your code here 
+</pre>
+
+
+<h3> h)</h3>
+
+<p>  We saw on the previous example, that we can add a layer of reasoning to infer if the bag are concentrated or not. We can also try to learn if one 
+  color is always more likely that the others. Consider a new set of observations, where green is predominant. Again, we cannot infer direclty 
+  this information with a simple level of reasoning. Thus, we add a new layer, where we again modify the parameters passed to the dirichlet distribution
+  to compute ps 
+</p>
+<p>
+We take the prior distribution decribed below. <br>
+  Informally, we sample from a dirichlet distribution, and use this array as the new parameters for another dirichlet distribution from 
+  which we obtain ps.  <br> 
+  What can you observe ? What is the posterior predictive distribution on a fresh new bag ? 
+</p>
+
+<pre>
+var colors = ["blue","red","green"]
+
+var data = [{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"},{bag: 1, color: "green"}, {bag: 1, color: "blue"},
+{bag: 2, color: "green"},{bag: 2, color: "green"},{bag: 2, color: "green"},{bag: 2, color: "blue"},{bag: 2, color: "red"},
+{bag: 3, color: "red"},{bag: 3, color: "green"},{bag: 3, color: "green"},{bag: 3, color: "green"},{bag: 3, color: "green"},{bag: 3, color: "red"},{bag: 3, color: "red"}]
+
+var A = dirichlet(ones([colors.length, 1]))
+var prototype = T.mul(A,colors.length)
+
+var makeBag = mem(function(n) {
+  var ps = dirichlet(prototype)
+  return Categorical({ps, vs : colors})
+})
+
+// Your code here 
+</pre>
+
+<h1> Sampling from a Curve </h1>
+
+<p> The code below tries to sample from a square and add a condition to make observations around a heart-shaped curve. </p>
+
+<pre>
+// see http://mathworld.wolfram.com/HeartSurface.html
+
+//To simplify, we could say that the following function verifies that the 
+// sampled point (x,y) is not too far (distance 0.01) from the actual hearth-shaped curve. 
+var onCurve = function(x, y) {
+  var x2 = x*x;
+  var term1 = y - Math.pow(x2, 1/3);
+  var crossSection = x2 + term1*term1 - 1;
+  return Math.abs(crossSection) < 0.01;
+};
+
+// Bounds of the square
+var xbounds = [-1, 1];
+var ybounds = [-1, 1.6];
+
+// We compute the mean for x and y in this square
+var xmu = 0.5 * (xbounds[0] + xbounds[1]);
+var ymu = 0.5 * (ybounds[0] + ybounds[1]);
+// We compute a standard deviation in the square
+var xsigma = 0.5 * (xbounds[1] - xbounds[0]);
+var ysigma = 0.5 * (ybounds[1] - ybounds[0]);
+
+// We sample randomly x and y, and we condition that the sampled points are close to the curve 
+var model = function() {
+  var x = gaussian(xmu, xsigma);
+  var y = gaussian(ymu, ysigma);
+  condition(onCurve(x, y));
+  return {x: x, y: y};
+};
+
+var post = Infer({method: 'rejection', samples: 1000}, model);
+viz.auto(post);
+</pre>
+
+<h3> a) </h3>
+
+<p> Why does rejection sampling works well on this example ?</p>
+
+<h3> b) </h3>
+
+<p> Now, try to run the MCMC inference algorithm on this model. Why does it not work well ? You can also try to change the options </p>
+
+<pre>
+...
+</pre>
+
+<h3> c) </h3>
+
+<p>The following distribution corresponds to taking directly a multivariate gaussian sample. Basically, instead of sampling x and then y, we directly 
+  sample a random point taking two means and two standard deviation. Modify your model to use this distribution, and run MCMC. What can you observe ? Why ? 
+</p>
+
+<pre>
+// Multivariate Gaussian 
+var a = diagCovGaussian({mu: Vector([0, 100]),sigma: Vector([1, 10])});
+// You can get a value by using T.get (type of tensors) 
+display(T.get(a, 0));
+display(T.get(a, 1));
+</pre>
+
+
+</body>
+<script>
+// find all <pre> elements and set up the editor on them
+var preEls = Array.prototype.slice.call(document.querySelectorAll("pre"));
+preEls.map(function(el) { editor.setup(el, {language: 'webppl'}); });
+</script>
+</html>
